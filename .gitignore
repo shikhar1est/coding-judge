@@ -1,0 +1,21 @@
+# Node modules
+node_modules/
+
+# Environment variables
+.env
+
+# Logs
+*.log
+logs/
+
+# System junk
+.DS_Store
+Thumbs.db
+
+# Docker output (when we generate it)
+Dockerfile-output/
+code-output/
+temp-code/
+
+# VS Code settings (optional)
+.vscode/
