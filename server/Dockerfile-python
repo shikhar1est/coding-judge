@@ -1,0 +1,8 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+COPY code.py code.py
+COPY input.txt input.txt
+
+CMD ["sh", "-c", "timeout 5s python3 code.py < input.txt"]

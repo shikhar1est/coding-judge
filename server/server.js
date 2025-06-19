@@ -18,6 +18,10 @@ app.use("/api/auth", authRoutes);
 const problemRoutes = require("./routes/problemRoutes");
 app.use("/api/problems", problemRoutes);
 
+const submissionRoutes = require("./routes/submissionRoutes");
+app.use("/api", submissionRoutes);
+
+
 
 // Connect to MongoDB and start server
 mongoose.connect(process.env.MONGO_URI)
