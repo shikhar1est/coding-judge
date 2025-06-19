@@ -73,6 +73,23 @@ exports.updateProblem = async (req, res) => {
   }
 };
 
+exports.deleteProblem = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const deleted = await Problem.findByIdAndDelete(id);
+    if (!deleted) {
+      return res.status(404).json({ error: "Problem not found" });
+    }
+
+    res.status(200).json({ message: "Problem deleted successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to delete problem" });
+  }
+};
+
+
 
 
 
