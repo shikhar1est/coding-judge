@@ -6,26 +6,26 @@ A full-fledged backend system for an online coding judge platform — built with
 
 ## 🚀 Features
 
-- 🔐 **JWT Authentication** with user/admin roles
-- 📄 **Problem Management** with test cases (admin only)
-- 📤 **Code Submission** and result evaluation
-- 🧪 **Unit Tests** for major APIs
-- 📊 **Leaderboard** to showcase top performers
-- 🐳 **Dockerized Execution** for code safety and isolation
-- 🚫 **Plagiarism Detection** via token-based similarity
-- 📈 **Rate Limiting** to prevent abuse
+- 🔐 **JWT Authentication** with user/admin roles  
+- 📄 **Problem Management** with test cases (admin only)  
+- 📤 **Code Submission** and result evaluation  
+- 🧪 **Unit Tests** for major APIs  
+- 📊 **Leaderboard** to showcase top performers  
+- 🐳 **Dockerized Execution** for code safety and isolation  
+- 🚫 **Plagiarism Detection** via token-based similarity  
+- 📈 **Rate Limiting** to prevent abuse  
 
 ---
 
 ## 🛠️ Technologies
 
-- Node.js + Express
-- MongoDB + Mongoose
-- JWT, bcryptjs
-- Docker (with separate images per language)
-- Jest + Supertest (unit testing)
-- Esprima + string-similarity (for plagiarism)
-- Swagger (API docs)
+- Node.js + Express  
+- MongoDB + Mongoose  
+- JWT, bcryptjs  
+- Docker (with separate images per language)  
+- Jest + Supertest (unit testing)  
+- Esprima + string-similarity (for plagiarism)  
+- Swagger (API docs)  
 
 ---
 
@@ -52,7 +52,22 @@ MONGO_URI=mongodb://127.0.0.1:27017/coding_judge
 JWT_SECRET=supersecret123
 ```
 
-### 4. Start Dev Server
+### 4. Seed Sample Data
+
+To add a demo admin, user, and a sample problem:
+
+```bash
+npm run seed
+```
+
+This will create:
+- 👤 Admin: `admin@example.com` / `admin123`  
+- 👤 User: `student@example.com` / `user123`  
+- 📘 Problem: *Count Vowels*
+
+Useful for quickly testing the full judge flow.
+
+### 5. Start Dev Server
 
 ```bash
 npm run dev
