@@ -94,9 +94,4 @@ router.post("/submit", verifyToken, submitCode);
 router.get("/submissions", verifyToken, getUserSubmissions);
 router.get("/problems/:id/submissions", verifyToken, isAdmin, getProblemSubmissions);
 
-// Temporary rate limit tester
-router.post("/test-rate", submissionLimiter, (req, res) => {
-  res.json({ message: "You made it before rate limit hit!" });
-});
-
 module.exports = router;
