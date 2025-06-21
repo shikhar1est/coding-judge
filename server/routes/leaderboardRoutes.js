@@ -17,10 +17,17 @@ const Submission = require("../models/Submission");
 router.get("/", verifyToken, async (req, res) => {
   try {
     const data = await Submission.aggregate([
-      { $match: { status: "accepted" } },
-      { $group: { _id: "$user", acceptedCount: { $sum: 1 } } },
-      { $sort: { acceptedCount: -1 } },
-      { $limit: 10 },
+      {
+        $group: {
+          _id: "$user",
+          acceptedCount: {
+            $sum: {
+              $cond: [{ $eq: ["$status", "accepted"] }, 1, 0]
+            }
+          },
+          total: { $sum: 1 }
+        }
+      },
       {
         $lookup: {
           from: "users",
@@ -32,10 +39,26 @@ router.get("/", verifyToken, async (req, res) => {
       {
         $project: {
           _id: 0,
+          username: { $arrayElemAt: ["$userInfo.username", 0] },
           email: { $arrayElemAt: ["$userInfo.email", 0] },
-          acceptedCount: 1
+          acceptedCount: 1,
+          totalSubmissions: "$total",
+          accuracy: {
+            $cond: [
+              { $eq: ["$total", 0] },
+              0,
+              {
+                $round: [
+                  { $multiply: [{ $divide: ["$acceptedCount", "$total"] }, 100] },
+                  2
+                ]
+              }
+            ]
+          }
         }
-      }
+      },
+      { $sort: { acceptedCount: -1 } },
+      { $limit: 10 }
     ]);
 
     res.json({ leaderboard: data });

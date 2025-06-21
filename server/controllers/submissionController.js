@@ -1,24 +1,31 @@
 const Problem = require("../models/Problem");
 const Submission = require("../models/Submission");
 const executeCode = require("../utils/codeExecutor");
-
 const esprima = require("esprima");
 
-// Token cleanup helpers
-function extractTokens(code) {
-  try {
-    const raw = esprima.tokenize(code);
-    const skipTokens = new Set([
-      "require", "console", "log", "readFileSync", "fs", "utf-8", ";", ".", "(", ")", "{", "}", ",", ":", "'"
-    ]);
-    return raw
-      .map(t => t.value)
-      .filter(token => token && !skipTokens.has(token.toLowerCase()));
-  } catch (err) {
-    return [];
+// ✅ Multi-language token extractor
+function extractTokens(code, language) {
+  if (language === "javascript") {
+    try {
+      const raw = esprima.tokenize(code);
+      const skipTokens = new Set([
+        "require", "console", "log", "readFileSync", "fs", "utf-8", ";", ".", "(", ")", "{", "}", ",", ":", "'"
+      ]);
+      return raw
+        .map(t => t.value)
+        .filter(token => token && !skipTokens.has(token.toLowerCase()));
+    } catch (err) {
+      return [];
+    }
   }
+
+  // Fallback for Python and C++
+  return code
+    .split(/\W+/) // split on non-word characters
+    .filter(token => token.length > 1); // ignore very short/trivial tokens
 }
 
+// 🔁 Jaccard similarity
 function jaccardSimilarity(tokensA, tokensB) {
   const setA = new Set(tokensA);
   const setB = new Set(tokensB);
@@ -36,15 +43,15 @@ exports.submitCode = async (req, res) => {
       return res.status(404).json({ error: "Problem not found" });
     }
 
-    // ✂️ Tokenize + filter
-    const currentTokens = extractTokens(code);
+    // ✂️ Tokenize based on language
+    const currentTokens = extractTokens(code, language);
 
     // ⛔ Ignore trivial code
     if (currentTokens.length < 5) {
       return res.status(400).json({ error: "Code is too short or trivial to evaluate meaningfully." });
     }
 
-    // 🧠 Use stored tokens for faster comparison
+    // 🧠 Fetch prior submissions
     const previous = await Submission.find({ problem: problemId, language }).select("tokens");
 
     let highestScore = 0;
@@ -93,7 +100,8 @@ exports.submitCode = async (req, res) => {
       results,
       status,
       plagiarismScore,
-      tokens: currentTokens // ✅ Store for next time
+      plagiarismFlag,
+      tokens: currentTokens
     });
 
     await submission.save();
