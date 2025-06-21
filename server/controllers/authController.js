@@ -18,9 +18,20 @@ exports.register = async (req, res) => {
       role
     });
 
-    res.status(201).json({ message: "User registered successfully", user });
+    // 🔐 Generate JWT token for the newly registered user
+    const token = jwt.sign(
+      { id: user._id, role: user.role },
+      process.env.JWT_SECRET,
+      { expiresIn: "1d" }
+    );
+
+    res.status(201).json({
+      message: "User registered successfully",
+      user,
+      token
+    });
   } catch (err) {
-    console.log(err)
+    console.log(err);
     res.status(500).json({ error: "Registration failed" });
   }
 };

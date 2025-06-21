@@ -25,7 +25,8 @@ const submissionSchema = new mongoose.Schema({
   plagiarismScore: {
     type: Number,
     default: 0
-  }
+  },
+  tokens: [String] // 🔍 Normalized tokens used for plagiarism check
 }, { timestamps: true });
 
 module.exports = mongoose.model("Submission", submissionSchema);

@@ -36,6 +36,27 @@ exports.submitCode = async (req, res) => {
       return res.status(404).json({ error: "Problem not found" });
     }
 
+    // ✂️ Tokenize + filter
+    const currentTokens = extractTokens(code);
+
+    // ⛔ Ignore trivial code
+    if (currentTokens.length < 5) {
+      return res.status(400).json({ error: "Code is too short or trivial to evaluate meaningfully." });
+    }
+
+    // 🧠 Use stored tokens for faster comparison
+    const previous = await Submission.find({ problem: problemId, language }).select("tokens");
+
+    let highestScore = 0;
+    for (const prev of previous) {
+      if (!prev.tokens || !Array.isArray(prev.tokens)) continue;
+      const score = jaccardSimilarity(currentTokens, prev.tokens);
+      if (score > highestScore) highestScore = score;
+    }
+
+    const plagiarismScore = parseFloat((highestScore * 100).toFixed(2));
+    const plagiarismFlag = plagiarismScore >= 80;
+
     const results = [];
     let passedCount = 0;
 
@@ -64,19 +85,6 @@ exports.submitCode = async (req, res) => {
         ? "rejected"
         : "partially-accepted";
 
-    // 🔍 Improved Token-Based Plagiarism Check
-    const currentTokens = extractTokens(code);
-    const previous = await Submission.find({ problem: problemId, language }).select("code");
-
-    let highestScore = 0;
-    for (const prev of previous) {
-      const prevTokens = extractTokens(prev.code);
-      const score = jaccardSimilarity(currentTokens, prevTokens);
-      if (score > highestScore) highestScore = score;
-    }
-
-    const plagiarismScore = parseFloat((highestScore * 100).toFixed(2));
-
     const submission = new Submission({
       user: req.user.id,
       problem: problemId,
@@ -84,7 +92,8 @@ exports.submitCode = async (req, res) => {
       code,
       results,
       status,
-      plagiarismScore
+      plagiarismScore,
+      tokens: currentTokens // ✅ Store for next time
     });
 
     await submission.save();
@@ -94,6 +103,7 @@ exports.submitCode = async (req, res) => {
       status,
       score: `${passedCount} / ${results.length}`,
       plagiarismScore,
+      plagiarismFlag,
       results
     });
 
