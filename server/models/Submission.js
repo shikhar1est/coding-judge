@@ -21,6 +21,10 @@ const submissionSchema = new mongoose.Schema({
     type: String,
     enum: ["accepted", "partially-accepted", "rejected"],
     default: "rejected"
+  },
+  plagiarismScore: {
+    type: Number,
+    default: 0
   }
 }, { timestamps: true });
 

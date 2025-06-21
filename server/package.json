@@ -15,10 +15,12 @@
   "dependencies": {
     "bcryptjs": "^3.0.2",
     "dotenv": "^16.5.0",
+    "esprima": "^4.0.1",
     "express": "^5.1.0",
     "express-rate-limit": "^7.5.0",
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.16.0",
+    "string-similarity": "^4.0.4",
     "swagger-jsdoc": "^6.2.8",
     "swagger-ui-express": "^5.0.1",
     "uuid": "^11.1.0"

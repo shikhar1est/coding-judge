@@ -2,6 +2,31 @@ const Problem = require("../models/Problem");
 const Submission = require("../models/Submission");
 const executeCode = require("../utils/codeExecutor");
 
+const esprima = require("esprima");
+
+// Token cleanup helpers
+function extractTokens(code) {
+  try {
+    const raw = esprima.tokenize(code);
+    const skipTokens = new Set([
+      "require", "console", "log", "readFileSync", "fs", "utf-8", ";", ".", "(", ")", "{", "}", ",", ":", "'"
+    ]);
+    return raw
+      .map(t => t.value)
+      .filter(token => token && !skipTokens.has(token.toLowerCase()));
+  } catch (err) {
+    return [];
+  }
+}
+
+function jaccardSimilarity(tokensA, tokensB) {
+  const setA = new Set(tokensA);
+  const setB = new Set(tokensB);
+  const intersection = [...setA].filter(x => setB.has(x));
+  const union = new Set([...setA, ...setB]);
+  return union.size === 0 ? 0 : intersection.length / union.size;
+}
+
 exports.submitCode = async (req, res) => {
   try {
     const { code, language, problemId } = req.body;
@@ -32,16 +57,6 @@ exports.submitCode = async (req, res) => {
       });
     }
 
-    const submission = new Submission({
-      user: req.user.id,
-      problem: problemId,
-      language,
-      code,
-      results
-    });
-
-    await submission.save();
-
     const status =
       passedCount === results.length
         ? "accepted"
@@ -49,10 +64,36 @@ exports.submitCode = async (req, res) => {
         ? "rejected"
         : "partially-accepted";
 
+    // 🔍 Improved Token-Based Plagiarism Check
+    const currentTokens = extractTokens(code);
+    const previous = await Submission.find({ problem: problemId, language }).select("code");
+
+    let highestScore = 0;
+    for (const prev of previous) {
+      const prevTokens = extractTokens(prev.code);
+      const score = jaccardSimilarity(currentTokens, prevTokens);
+      if (score > highestScore) highestScore = score;
+    }
+
+    const plagiarismScore = parseFloat((highestScore * 100).toFixed(2));
+
+    const submission = new Submission({
+      user: req.user.id,
+      problem: problemId,
+      language,
+      code,
+      results,
+      status,
+      plagiarismScore
+    });
+
+    await submission.save();
+
     res.status(200).json({
       message: "Submission evaluated",
       status,
       score: `${passedCount} / ${results.length}`,
+      plagiarismScore,
       results
     });
 
