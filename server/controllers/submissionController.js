@@ -46,7 +46,6 @@ exports.submitCode = async (req, res) => {
     // ✂️ Tokenize based on language
     const currentTokens = extractTokens(code, language);
 
-    // ⛔ Ignore trivial code
     if (currentTokens.length < 5) {
       return res.status(400).json({ error: "Code is too short or trivial to evaluate meaningfully." });
     }
