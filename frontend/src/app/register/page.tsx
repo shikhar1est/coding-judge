@@ -1,16 +1,30 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import api from '@/utils/api';
 
 export default function RegisterPage() {
+  const router = useRouter();
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Call register API
-    console.log('Registering:', { username, email, password });
+    try {
+      const res = await api.post('/auth/register', {
+        username,
+        email,
+        password,
+      });
+      const token = res.data.token;
+      localStorage.setItem('token', token);
+      router.push('/problems');
+    } catch (err) {
+      console.error('Registration failed:', err);
+      alert('Registration failed. Try again.');
+    }
   };
 
   return (

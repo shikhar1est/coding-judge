@@ -1,15 +1,25 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import api from '@/utils/api';
 
 export default function LoginPage() {
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Call API
-    console.log('Logging in:', { email, password });
+    try {
+      const res = await api.post('/auth/login', { email, password });
+      const token = res.data.token;
+      localStorage.setItem('token', token);
+      router.push('/problems');
+    } catch (err) {
+      console.error('Login failed:', err);
+      alert('Invalid email or password');
+    }
   };
 
   return (
