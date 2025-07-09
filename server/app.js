@@ -8,7 +8,7 @@ const app = express();
 
 //Enable CORS
 app.use(cors({
-  origin: 'http://localhost:3000',
+  origin: process.env.CLIENT_ORIGIN || 'http://localhost:3000',
   credentials: true,
 }));
 
@@ -17,7 +17,7 @@ app.use(express.json());
 //Swagger setup
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
 
-// 🛣️ API Routes
+//API Routes
 const authRoutes = require("./routes/authRoutes");
 const problemRoutes = require("./routes/problemRoutes");
 const submissionRoutes = require("./routes/submissionRoutes");
