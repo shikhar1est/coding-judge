@@ -9,10 +9,8 @@ describe("Submission API", () => {
 
   beforeAll(async () => {
     await mongoose.connect(process.env.MONGO_URI);
-    await new Promise((res) => setTimeout(res, 300)); // Small delay for stability
+    await new Promise((res) => setTimeout(res, 300));
     server = app.listen(4002);
-
-    // Register admin user
     const adminRes = await request(server)
       .post("/api/auth/register")
       .send({
@@ -27,20 +25,15 @@ describe("Submission API", () => {
       console.error("❌ Admin token not received. Check /register response:", adminRes.body);
       return;
     }
-
-    // Create problem using admin token
     const problemRes = await request(server)
       .post("/api/problems/create")
       .set("Authorization", `Bearer ${adminToken}`)
       .send({
         title: "Count A",
         description: "Count number of 'a's in the input",
-        sampleInput: "banana",
-        sampleOutput: "3",
-        testCases: [
-          { input: "banana", expectedOutput: "3" },
-          { input: "apple", expectedOutput: "1" }
-        ]
+        sampleTests: "banana => 3",
+        hiddenTests: "apple => 1",
+        difficulty: "Easy"
       });
 
     if (!problemRes.body.problem) {
@@ -49,8 +42,6 @@ describe("Submission API", () => {
     }
 
     problemId = problemRes.body.problem._id;
-
-    // Register user
     const userRes = await request(server)
       .post("/api/auth/register")
       .send({
@@ -60,7 +51,7 @@ describe("Submission API", () => {
       });
 
     userToken = userRes.body.token;
-  }, 20000); // ⏳ increased timeout
+  }, 20000);
 
   afterAll(async () => {
     await mongoose.connection.close();
@@ -76,11 +67,12 @@ describe("Submission API", () => {
         language: "python",
         problemId
       });
-
     expect(res.statusCode).toBe(200);
     expect(res.body).toHaveProperty("results");
     expect(Array.isArray(res.body.results)).toBe(true);
-  }, 15000); // 🧠 allow enough time
+    const passedAll = res.body.results.every(r => r.passed === true);
+    expect(passedAll).toBe(true);
+  }, 15000);
 
   it("should return user's submissions", async () => {
     const res = await request(server)

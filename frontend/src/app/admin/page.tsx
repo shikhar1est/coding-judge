@@ -1,8 +1,18 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
-import api from '@/utils/api';
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import api from "@/utils/api";
+
+interface TestCase {
+  input: string;
+  expectedOutput: string;
+}
+
+interface SampleTest {
+  input: string;
+  output: string;
+}
 
 interface Problem {
   _id: string;
@@ -14,102 +24,108 @@ interface Problem {
 
 export default function AdminPage() {
   const [problems, setProblems] = useState<Problem[]>([]);
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [difficulty, setDifficulty] = useState('Easy');
-  const [tags, setTags] = useState('');
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [difficulty, setDifficulty] = useState("Easy");
+  const [tags, setTags] = useState("");
+  const [constraints, setConstraints] = useState("");
+  const [sampleTests, setSampleTests] = useState<SampleTest[]>([]);
+  const [hiddenTests, setHiddenTests] = useState<TestCase[]>([]);
   const router = useRouter();
 
-  // 🔐 Check token + admin role
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!token) return router.push('/login');
+    const token = localStorage.getItem("token");
+    if (!token) return router.push("/login");
 
     try {
-      const decoded = JSON.parse(atob(token.split('.')[1]));
-      if (decoded.role !== 'admin') {
-        alert('Access denied');
-        router.push('/problems');
+      const decoded = JSON.parse(atob(token.split(".")[1]));
+      if (decoded.role !== "admin") {
+        alert("Access denied");
+        router.push("/problems");
       }
     } catch (err) {
-      console.error('Invalid token');
-      router.push('/login');
+      console.error("Invalid token");
+      router.push("/login");
     }
   }, []);
 
-  // 📡 Load all problems
   useEffect(() => {
     const fetchProblems = async () => {
       try {
-        const res = await api.get('/problems');
+        const res = await api.get("/problems");
         setProblems(res.data);
       } catch (err) {
-        console.error('Failed to load problems:', err);
+        console.error("Failed to load problems:", err);
       }
     };
     fetchProblems();
   }, []);
 
-  // ➕ Add new problem
   const handleAddProblem = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!sampleTests.length || !hiddenTests.length) {
+      alert("Please add at least one sample and one hidden test case.");
+      return;
+    }
+
     try {
-      const res = await api.post('/problems', {
+      const res = await api.post("/problems", {
         title,
         description,
         difficulty,
-        tags: tags.split(',').map((t) => t.trim()),
+        tags: tags.split(",").map((t) => t.trim()),
+        constraints,
+        sampleInput: sampleTests[0]?.input || "",
+        sampleOutput: sampleTests[0]?.output || "",
+        testCases: hiddenTests,
       });
-      setProblems((prev) => [...prev, res.data]);
-      setTitle('');
-      setDescription('');
-      setDifficulty('Easy');
-      setTags('');
+
+      setProblems((prev) => [...prev, res.data.problem]);
+      // Reset form
+      setTitle("");
+      setDescription("");
+      setDifficulty("Easy");
+      setTags("");
+      setConstraints("");
+      setSampleTests([]);
+      setHiddenTests([]);
     } catch (err) {
-      console.error('Error adding problem:', err);
-      alert('Failed to add problem');
+      console.error("Error adding problem:", err);
+      alert("Failed to add problem");
     }
   };
 
-  // 🗑️ Delete problem
   const handleDelete = async (id: string) => {
-    const confirmDelete = window.confirm('Are you sure you want to delete this problem?');
+    const confirmDelete = window.confirm("Are you sure you want to delete this problem?");
     if (!confirmDelete) return;
 
     try {
       await api.delete(`/problems/${id}`);
       setProblems((prev) => prev.filter((p) => p._id !== id));
     } catch (err) {
-      console.error('Error deleting problem:', err);
-      alert('Failed to delete problem');
+      console.error("Error deleting problem:", err);
+      alert("Failed to delete problem");
     }
   };
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-6">Admin Panel: Manage Problems</h1>
+    <div className="max-w-6xl mx-auto p-6">
+      <h1 className="text-3xl font-bold text-center mb-10">Admin Panel: Manage Problems</h1>
 
-      {/* ➕ Add Problem Form */}
-      <div className="mb-10 border p-4 rounded bg-gray-50">
-        <h2 className="text-lg font-semibold mb-2">Add New Problem</h2>
-        <form onSubmit={handleAddProblem} className="grid gap-4">
+      <div className="bg-black shadow-md rounded-lg p-6 mb-12">
+        <h2 className="text-xl font-semibold mb-4">Add New Problem</h2>
+        <form onSubmit={handleAddProblem} className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <input
-            className="border p-2 rounded"
+            className="border border-gray-300 rounded px-4 py-2 w-full"
             type="text"
             placeholder="Problem Title"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             required
           />
-          <textarea
-            className="border p-2 rounded"
-            placeholder="Problem Description"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            required
-          />
           <select
-            className="border p-2 rounded"
+            className="border border-gray-300 rounded px-4 py-2 w-full"
             value={difficulty}
             onChange={(e) => setDifficulty(e.target.value)}
           >
@@ -117,56 +133,105 @@ export default function AdminPage() {
             <option value="Medium">Medium</option>
             <option value="Hard">Hard</option>
           </select>
+          <textarea
+            className="border border-gray-300 rounded px-4 py-2 md:col-span-2 w-full min-h-[120px]"
+            placeholder="Problem Description"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            required
+          />
+          <textarea
+            className="border border-gray-300 rounded px-4 py-2 md:col-span-2 w-full min-h-[80px]"
+            placeholder="Constraints"
+            value={constraints}
+            onChange={(e) => setConstraints(e.target.value)}
+          />
           <input
-            className="border p-2 rounded"
+            className="border border-gray-300 rounded px-4 py-2 md:col-span-2 w-full"
             type="text"
             placeholder="Tags (comma separated)"
             value={tags}
             onChange={(e) => setTags(e.target.value)}
           />
+          <textarea
+            className="border border-gray-300 rounded px-4 py-2 md:col-span-2"
+            rows={3}
+            placeholder="Sample Tests (Format: input=>output; one per line)"
+            onChange={(e) => {
+              const lines = e.target.value.trim().split("\n");
+              setSampleTests(
+                lines.map((line) => {
+                  const [input, output] = line.split("=>");
+                  return { input: input?.trim() || "", output: output?.trim() || "" };
+                })
+              );
+            }}
+          />
+          <textarea
+            className="border border-gray-300 rounded px-4 py-2 md:col-span-2"
+            rows={3}
+            placeholder="Hidden Test Cases (Format: input=>expectedOutput; one per line)"
+            onChange={(e) => {
+              const lines = e.target.value.trim().split("\n");
+              setHiddenTests(
+                lines.map((line) => {
+                  const [input, expectedOutput] = line.split("=>");
+                  return { input: input?.trim() || "", expectedOutput: expectedOutput?.trim() || "" };
+                })
+              );
+            }}
+          />
           <button
             type="submit"
-            className="bg-green-600 text-white py-2 px-4 rounded"
+            className="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded md:col-span-2"
           >
-            Add Problem
+            ➕ Add Problem
           </button>
         </form>
       </div>
 
-      {/* 📋 Existing Problems Table */}
-      <table className="w-full table-auto border">
-        <thead>
-          <tr className="bg-gray-100 text-left">
-            <th className="p-2 border">Title</th>
-            <th className="p-2 border">Difficulty</th>
-            <th className="p-2 border">Tags</th>
-            <th className="p-2 border">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {problems.map((p) => (
-            <tr key={p._id} className="border-t hover:bg-gray-50">
-              <td className="p-2 border">{p.title}</td>
-              <td className="p-2 border">{p.difficulty}</td>
-              <td className="p-2 border">{p.tags.join(', ')}</td>
-              <td className="p-2 border space-x-2">
-                <button
-                  onClick={() => router.push(`/admin/problems/${p._id}`)}
-                  className="bg-yellow-400 px-2 py-1 rounded text-sm"
-                >
-                  Edit
-                </button>
-                <button
-                  onClick={() => handleDelete(p._id)}
-                  className="bg-red-500 text-white px-2 py-1 rounded text-sm"
-                >
-                  Delete
-                </button>
-              </td>
+      <div className="overflow-x-auto">
+        <table className="min-w-full bg-white rounded shadow-md">
+          <thead className="bg-gray-100 text-gray-700">
+            <tr>
+              <th className="text-left px-4 py-2">Title</th>
+              <th className="text-left px-4 py-2">Difficulty</th>
+              <th className="text-left px-4 py-2">Tags</th>
+              <th className="text-left px-4 py-2">Actions</th>
             </tr>
-          ))}
-        </tbody>
-      </table>
+          </thead>
+          <tbody>
+            {problems.map((p) => (
+              <tr key={p._id} className="border-t hover:bg-gray-50">
+                <td className="px-4 py-2">{p.title}</td>
+                <td className="px-4 py-2">{p.difficulty}</td>
+                <td className="px-4 py-2">{p.tags.join(", ")}</td>
+                <td className="px-4 py-2 space-x-2">
+                  <button
+                    onClick={() => router.push(`/admin/problems/${p._id}`)}
+                    className="bg-yellow-400 hover:bg-yellow-500 text-white px-3 py-1 rounded text-sm"
+                  >
+                    ✏️ Edit
+                  </button>
+                  <button
+                    onClick={() => handleDelete(p._id)}
+                    className="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm"
+                  >
+                    🗑️ Delete
+                  </button>
+                </td>
+              </tr>
+            ))}
+            {problems.length === 0 && (
+              <tr>
+                <td className="px-4 py-3 text-center text-gray-500" colSpan={4}>
+                  No problems added yet.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

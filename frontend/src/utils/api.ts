@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const instance = axios.create({
-  baseURL: 'http://localhost:3000/api', // change this if deployed
+  baseURL: 'https://coding-judge-backend-9czr.onrender.com/api', 
   headers: {
     'Content-Type': 'application/json',
   },

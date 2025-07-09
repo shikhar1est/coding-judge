@@ -21,7 +21,7 @@ const isAdmin = require("../middleware/isAdmin");
 
 /**
  * @swagger
- * /api/problems/create:
+ * /api/problems:
  *   post:
  *     summary: Create a new coding problem (Admin only)
  *     tags: [Problems]
@@ -39,6 +39,13 @@ const isAdmin = require("../middleware/isAdmin");
  *                 type: string
  *               description:
  *                 type: string
+ *               difficulty:
+ *                 type: string
+ *                 enum: [Easy, Medium, Hard]
+ *               tags:
+ *                 type: array
+ *                 items:
+ *                   type: string
  *               constraints:
  *                 type: string
  *               sampleInput:
@@ -140,6 +147,13 @@ const isAdmin = require("../middleware/isAdmin");
  *                 type: string
  *               description:
  *                 type: string
+ *               difficulty:
+ *                 type: string
+ *                 enum: [Easy, Medium, Hard]
+ *               tags:
+ *                 type: array
+ *                 items:
+ *                   type: string
  *               constraints:
  *                 type: string
  *               sampleInput:
@@ -160,7 +174,7 @@ const isAdmin = require("../middleware/isAdmin");
  *         description: Problem updated
  */
 
-router.post("/create", verifyToken, isAdmin, createProblem);
+router.post("/", verifyToken, isAdmin, createProblem);
 router.get("/", verifyToken, getAllProblems);
 router.get("/:id", verifyToken, getProblemById);
 router.delete("/:id", verifyToken, isAdmin, deleteProblem);

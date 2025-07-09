@@ -5,7 +5,7 @@ const jwt = require("jsonwebtoken");
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret";
 
-// ✅ Create a valid ObjectId for admin
+// Create dummy admin token
 const dummyAdminId = new mongoose.Types.ObjectId();
 const adminToken = jwt.sign({ id: dummyAdminId.toString(), role: "admin" }, JWT_SECRET, { expiresIn: "1h" });
 
@@ -15,10 +15,9 @@ describe("Problem API", () => {
 
   beforeAll(async () => {
     await mongoose.connect(process.env.MONGO_URI);
-    // Small wait to ensure DB ready before test starts
     await new Promise((res) => setTimeout(res, 300));
     server = app.listen(4001);
-  }, 20000); // Increased timeout
+  }, 20000);
 
   afterAll(async () => {
     await mongoose.connection.close();
@@ -33,12 +32,10 @@ describe("Problem API", () => {
         title: "Add Two Numbers",
         description: "Add two integers and return the sum.",
         constraints: "1 <= a,b <= 1000",
-        sampleInput: "2 3",
-        sampleOutput: "5",
-        testCases: [
-          { input: "2 3", expectedOutput: "5" },
-          { input: "100 200", expectedOutput: "300" }
-        ]
+        difficulty: "Easy",
+        tags: ["math", "beginner"],
+        sampleTests: "2 3 => 5\n100 200 => 300",
+        hiddenTests: "999 1 => 1000"
       });
 
     if (res.statusCode !== 201) {
@@ -48,6 +45,7 @@ describe("Problem API", () => {
     expect(res.statusCode).toBe(201);
     expect(res.body.problem).toHaveProperty("_id");
     expect(res.body.problem.title).toBe("Add Two Numbers");
+    expect(res.body.problem.testCases.length).toBeGreaterThanOrEqual(3);
 
     createdProblemId = res.body.problem._id;
   });
@@ -58,12 +56,12 @@ describe("Problem API", () => {
       .send({
         title: "Invalid Test",
         description: "This should fail.",
-        sampleInput: "1",
-        sampleOutput: "2",
-        testCases: [{ input: "1", expectedOutput: "2" }]
+        sampleTests: "1 => 2",
+        hiddenTests: "3 => 4"
       });
 
-    expect(res.statusCode).toBe(401); // Token missing
+    expect(res.statusCode).toBe(401); // Or 403 if unauthorized
+    expect(res.body.error).toMatch(/token|unauthorized|access denied/i);
   });
 
   it("should delete the problem", async () => {

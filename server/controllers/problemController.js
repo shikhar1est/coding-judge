@@ -1,11 +1,24 @@
 const Problem = require("../models/Problem");
 
-exports.createProblem = async (req, res) => {  //Defines the controller function that will run when POST /api/problems is hit
-  try {
-    const { title, description, constraints, sampleInput, sampleOutput, testCases } = req.body;
+// 🧠 Utility to parse raw test case string into structured objects
+const parseTestCases = (inputString) => {
+  if (!inputString) return [];
+  return inputString
+    .split('\n')
+    .map(line => line.trim())
+    .filter(line => line.includes('=>'))
+    .map(line => {
+      const [input, expectedOutput] = line.split('=>').map(s => s.trim());
+      return { input, expectedOutput };
+    });
+};
 
-    // Only admins allowed 
-    if (req.user.role !== "admin") { //This assumes a JWT middleware already added req.user 
+// ✅ CREATE
+exports.createProblem = async (req, res) => {
+  try {
+    const { title, description, constraints, difficulty, tags, sampleTests, hiddenTests } = req.body;
+
+    if (req.user.role !== "admin") {
       return res.status(403).json({ error: "Access denied. Admins only." });
     }
 
@@ -13,11 +26,23 @@ exports.createProblem = async (req, res) => {  //Defines the controller function
       title,
       description,
       constraints,
-      sampleInput,
-      sampleOutput,
-      testCases,
+      difficulty,
+      tags,
+      sampleInput: '',         // now derived from parsed sampleTests[0]?.input
+      sampleOutput: '',        // derived from sampleTests[0]?.expectedOutput
+      testCases: [
+        ...parseTestCases(sampleTests),
+        ...parseTestCases(hiddenTests)
+      ],
       createdBy: req.user.id
     });
+
+    // Auto-set sample input/output from first sample test
+    const parsedSamples = parseTestCases(sampleTests);
+    if (parsedSamples.length > 0) {
+      problem.sampleInput = parsedSamples[0].input;
+      problem.sampleOutput = parsedSamples[0].expectedOutput;
+    }
 
     await problem.save();
     res.status(201).json({ message: "Problem created successfully", problem });
@@ -26,15 +51,18 @@ exports.createProblem = async (req, res) => {  //Defines the controller function
     res.status(500).json({ error: "Failed to create problem" });
   }
 };
+
+// ✅ GET ALL
 exports.getAllProblems = async (req, res) => {
   try {
-    const problems = await Problem.find().select("title description");
+    const problems = await Problem.find().select("title description difficulty tags");
     res.json(problems);
   } catch (err) {
     res.status(500).json({ error: "Failed to fetch problems" });
   }
 };
 
+// ✅ GET BY ID
 exports.getProblemById = async (req, res) => {
   try {
     const problem = await Problem.findById(req.params.id);
@@ -45,16 +73,7 @@ exports.getProblemById = async (req, res) => {
   }
 };
 
-exports.deleteProblem = async (req, res) => {
-  try {
-    const deleted = await Problem.findByIdAndDelete(req.params.id);
-    if (!deleted) return res.status(404).json({ error: "Problem not found" });
-    res.json({ message: "Problem deleted successfully" });
-  } catch (err) {
-    res.status(500).json({ error: "Failed to delete problem", details: err.message });
-  }
-};
-
+// ✅ UPDATE
 exports.updateProblem = async (req, res) => {
   try {
     const updated = await Problem.findByIdAndUpdate(
@@ -62,10 +81,7 @@ exports.updateProblem = async (req, res) => {
       { $set: req.body },
       { new: true, runValidators: true }
     );
-
-    if (!updated) {
-      return res.status(404).json({ error: "Problem not found" });
-    }
+    if (!updated) return res.status(404).json({ error: "Problem not found" });
 
     res.json({ message: "Problem updated successfully", problem: updated });
   } catch (err) {
@@ -73,23 +89,15 @@ exports.updateProblem = async (req, res) => {
   }
 };
 
+// ✅ DELETE
 exports.deleteProblem = async (req, res) => {
   try {
-    const { id } = req.params;
-
-    const deleted = await Problem.findByIdAndDelete(id);
-    if (!deleted) {
-      return res.status(404).json({ error: "Problem not found" });
-    }
+    const deleted = await Problem.findByIdAndDelete(req.params.id);
+    if (!deleted) return res.status(404).json({ error: "Problem not found" });
 
     res.status(200).json({ message: "Problem deleted successfully" });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Failed to delete problem" });
+    res.status(500).json({ error: "Failed to delete problem", details: err.message });
   }
 };
-
-
-
-
 
