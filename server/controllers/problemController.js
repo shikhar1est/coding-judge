@@ -16,11 +16,22 @@ const parseTestCases = (inputString) => {
 // ✅ CREATE
 exports.createProblem = async (req, res) => {
   try {
-    const { title, description, constraints, difficulty, tags, sampleTests, hiddenTests } = req.body;
+    const {
+      title,
+      description,
+      constraints,
+      difficulty,
+      tags,
+      sampleTests,
+      hiddenTests
+    } = req.body;
 
     if (req.user.role !== "admin") {
       return res.status(403).json({ error: "Access denied. Admins only." });
     }
+
+    const sampleInput = sampleTests[0]?.input || '';
+    const sampleOutput = sampleTests[0]?.output || '';
 
     const problem = new Problem({
       title,
@@ -28,29 +39,21 @@ exports.createProblem = async (req, res) => {
       constraints,
       difficulty,
       tags,
-      sampleInput: '',         // now derived from parsed sampleTests[0]?.input
-      sampleOutput: '',        // derived from sampleTests[0]?.expectedOutput
-      testCases: [
-        ...parseTestCases(sampleTests),
-        ...parseTestCases(hiddenTests)
-      ],
+      sampleInput,
+      sampleOutput,
+      testCases: hiddenTests,
       createdBy: req.user.id
     });
 
-    // Auto-set sample input/output from first sample test
-    const parsedSamples = parseTestCases(sampleTests);
-    if (parsedSamples.length > 0) {
-      problem.sampleInput = parsedSamples[0].input;
-      problem.sampleOutput = parsedSamples[0].expectedOutput;
-    }
-
     await problem.save();
     res.status(201).json({ message: "Problem created successfully", problem });
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: "Failed to create problem" });
   }
 };
+
 
 // ✅ GET ALL
 exports.getAllProblems = async (req, res) => {
