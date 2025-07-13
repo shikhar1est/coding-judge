@@ -57,7 +57,7 @@ export default function ProblemPage() {
     setLoading(true);
     setOutput('');
     try {
-      const res = await api.post(`/submissions`, {
+      const res = await api.post(`/submit`, {
         problemId: id,
         language,
         code,
@@ -65,9 +65,15 @@ export default function ProblemPage() {
       const result = res.data.result || res.data.verdict || 'Submitted successfully';
       setOutput(result);
     } catch (err: any) {
-      console.error('Submission error:', err);
-      setOutput('⚠️ Error submitting code. Please try again.');
-    } finally {
+  const errorMsg =
+    err?.response?.data?.error ||      // server-sent error
+    err?.response?.data?.message ||    // fallback if message is used
+    err?.message ||                    // network-level error
+    JSON.stringify(err);               // last resort
+
+  console.error("❌ Submission error:", errorMsg);
+  setOutput(`⚠️ Error submitting code: ${errorMsg}`);
+        }finally {
       setLoading(false);
     }
   };
@@ -77,7 +83,7 @@ export default function ProblemPage() {
   return (
     <div className="p-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* 🧠 Problem Details */}
-      <div className="bg-white p-4 rounded shadow">
+      <div className="bg-green-400 p-4 rounded shadow">
         <h1 className="text-2xl font-bold mb-2">{problem.title}</h1>
         <p className="text-sm text-gray-500 mb-2">Difficulty: {problem.difficulty}</p>
         <pre className="whitespace-pre-wrap text-gray-800">{problem.description}</pre>
@@ -112,7 +118,7 @@ export default function ProblemPage() {
           <button
             onClick={handleSubmit}
             disabled={loading}
-            className="bg-blue-600 text-white px-4 py-1 rounded disabled:opacity-60"
+            className="bg-red-600 text-black px-4 py-1 rounded disabled:opacity-60"
           >
             {loading ? 'Submitting...' : 'Submit'}
           </button>

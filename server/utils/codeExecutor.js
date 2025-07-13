@@ -27,9 +27,10 @@ const executeCode = (code, language, input) => {
     fs.writeFileSync(codePath, code);
     fs.writeFileSync(inputPath, input);
 
-    // ✅ Go two levels up to reach Dockerfiles in project root
+    // ✅ Check if Dockerfile exists at project root
     const dockerfileSource = path.join(__dirname, `../../${config.dockerfile}`);
     if (!fs.existsSync(dockerfileSource)) {
+      console.error(`❌ Missing Dockerfile: ${config.dockerfile} not found at ${dockerfileSource}`);
       return resolve({ output: "", error: `Dockerfile '${config.dockerfile}' not found in project root` });
     }
 
@@ -37,6 +38,7 @@ const executeCode = (code, language, input) => {
 
     const imageName = `code-runner-${jobId}`;
     const dockerCommand = `docker build -t ${imageName} . && docker run --rm ${imageName}`;
+
     exec(dockerCommand, { cwd: tempDir, timeout: 10000 }, (err, stdout, stderr) => {
       try {
         fs.rmSync(tempDir, { recursive: true, force: true });
@@ -45,6 +47,11 @@ const executeCode = (code, language, input) => {
       }
 
       if (err) {
+        console.error("❌ Docker build/run failed");
+        console.error("📄 Command:", dockerCommand);
+        console.error("📦 Temp Dir:", tempDir);
+        console.error("🐳 Docker Error Message:", err.message);
+        console.error("📤 Stderr:", stderr);
         return resolve({ output: "", error: stderr || err.message });
       }
 

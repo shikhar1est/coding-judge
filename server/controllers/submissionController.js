@@ -3,13 +3,14 @@ const Submission = require("../models/Submission");
 const executeCode = require("../utils/codeExecutor");
 const esprima = require("esprima");
 
-// ✅ Multi-language token extractor
+// ✅ Token extractor by language
 function extractTokens(code, language) {
   if (language === "javascript") {
     try {
       const raw = esprima.tokenize(code);
       const skipTokens = new Set([
-        "require", "console", "log", "readFileSync", "fs", "utf-8", ";", ".", "(", ")", "{", "}", ",", ":", "'"
+        "require", "console", "log", "readFileSync", "fs", "utf-8",
+        ";", ".", "(", ")", "{", "}", ",", ":", "'"
       ]);
       return raw
         .map(t => t.value)
@@ -19,10 +20,9 @@ function extractTokens(code, language) {
     }
   }
 
-  // Fallback for Python and C++
   return code
-    .split(/\W+/) // split on non-word characters
-    .filter(token => token.length > 1); // ignore very short/trivial tokens
+    .split(/\W+/)
+    .filter(token => token.length > 1);
 }
 
 // 🔁 Jaccard similarity
@@ -34,23 +34,30 @@ function jaccardSimilarity(tokensA, tokensB) {
   return union.size === 0 ? 0 : intersection.length / union.size;
 }
 
+// ✅ Submit code controller
 exports.submitCode = async (req, res) => {
   try {
     const { code, language, problemId } = req.body;
+
+    if (!code || !language || !problemId) {
+      return res.status(400).json({ error: "Missing code, language, or problemId" });
+    }
 
     const problem = await Problem.findById(problemId);
     if (!problem) {
       return res.status(404).json({ error: "Problem not found" });
     }
 
-    // ✂️ Tokenize based on language
-    const currentTokens = extractTokens(code, language);
+    const hiddenTests = problem.hiddenTests;
+    if (!Array.isArray(hiddenTests) || hiddenTests.length === 0) {
+      return res.status(400).json({ error: "No valid hidden test cases found for this problem" });
+    }
 
+    const currentTokens = extractTokens(code, language);
     if (currentTokens.length < 5) {
       return res.status(400).json({ error: "Code is too short or trivial to evaluate meaningfully." });
     }
 
-    // 🧠 Fetch prior submissions
     const previous = await Submission.find({ problem: problemId, language }).select("tokens");
 
     let highestScore = 0;
@@ -66,11 +73,22 @@ exports.submitCode = async (req, res) => {
     const results = [];
     let passedCount = 0;
 
-    for (const testCase of problem.testCases) {
+    for (const testCase of hiddenTests) {
       const { input, expectedOutput } = testCase;
-      const { output } = await executeCode(code, language, input);
 
-      const cleanOutput = (output || "").trim();
+      let output = "";
+      let error = "";
+
+      try {
+        const execResult = await executeCode(code, language, input);
+        output = execResult.output || "";
+        error = execResult.error || "";
+      } catch (execErr) {
+        console.error("⚠️ Code execution failed:", execErr);
+        error = execErr.message || "Execution error";
+      }
+
+      const cleanOutput = output.trim();
       const cleanExpected = (expectedOutput || "").trim();
 
       const passed = cleanOutput === cleanExpected;
@@ -80,12 +98,13 @@ exports.submitCode = async (req, res) => {
         input,
         expected: cleanExpected,
         output: cleanOutput,
+        error: error || null,
         passed
       });
     }
 
     const status =
-      passedCount === results.length
+      passedCount === hiddenTests.length
         ? "accepted"
         : passedCount === 0
         ? "rejected"
@@ -108,18 +127,31 @@ exports.submitCode = async (req, res) => {
     res.status(200).json({
       message: "Submission evaluated",
       status,
-      score: `${passedCount} / ${results.length}`,
+      score: `${passedCount} / ${hiddenTests.length}`,
       plagiarismScore,
       plagiarismFlag,
       results
     });
 
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Submission failed", details: err.message });
+    console.error("🔥 Full submission error:", {
+      message: err.message,
+      name: err.name,
+      stack: err.stack,
+      cause: err.cause,
+      ...err,
+    });
+
+    res.status(500).json({
+      error: "Submission failed",
+      message: err.message || "No error message",
+      stack: err.stack || "No stack trace",
+      name: err.name || "No name",
+    });
   }
 };
 
+// 🧾 User's submission history
 exports.getUserSubmissions = async (req, res) => {
   try {
     const submissions = await Submission.find({ user: req.user.id }).populate("problem", "title");
@@ -129,6 +161,7 @@ exports.getUserSubmissions = async (req, res) => {
   }
 };
 
+// 📊 Problem-specific submissions (Admin only)
 exports.getProblemSubmissions = async (req, res) => {
   try {
     const submissions = await Submission.find({ problem: req.params.id }).populate("user", "name email");
