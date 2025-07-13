@@ -30,20 +30,21 @@ exports.createProblem = async (req, res) => {
       return res.status(403).json({ error: "Access denied. Admins only." });
     }
 
-    const sampleInput = sampleTests[0]?.input || '';
-    const sampleOutput = sampleTests[0]?.output || '';
+    const sampleInput = sampleTests?.[0]?.input || '';
+const sampleOutput = sampleTests?.[0]?.output || '';
 
-    const problem = new Problem({
-      title,
-      description,
-      constraints,
-      difficulty,
-      tags,
-      sampleInput,
-      sampleOutput,
-      testCases: hiddenTests,
-      createdBy: req.user.id
-    });
+const problem = new Problem({
+  title,
+  description,
+  constraints,
+  difficulty,
+  tags,
+  sampleInput,
+  sampleOutput,
+  testCases: Array.isArray(hiddenTests) ? hiddenTests : [],
+  createdBy: req.user.id
+});
+
 
     await problem.save();
     res.status(201).json({ message: "Problem created successfully", problem });
