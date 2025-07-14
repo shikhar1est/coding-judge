@@ -15,36 +15,38 @@ const parseTestCases = (inputString) => {
 
 // ✅ CREATE
 exports.createProblem = async (req, res) => {
+  console.log("🔁 Incoming request body:", JSON.stringify(req.body, null, 2));
+
+  const {
+    title,
+    description,
+    constraints,
+    difficulty,
+    tags,
+    sampleTests,
+    hiddenTests
+  } = req.body;
+
+  console.log("📦 sampleTests:", sampleTests);
+  console.log("📦 hiddenTests:", hiddenTests);
+
+  // normalize arrays
+  const parsedSamples = Array.isArray(sampleTests)
+    ? sampleTests.map(({ input, output }) => ({ input, expectedOutput: output }))
+    : [];
+  const parsedHidden = Array.isArray(hiddenTests)
+    ? hiddenTests.map(({ input, expectedOutput }) => ({ input, expectedOutput }))
+    : [];
+
+  console.log("✅ parsedSamples:", parsedSamples);
+  console.log("✅ parsedHidden:", parsedHidden);
+
+  // --- rest remains same
+
   try {
-    const {
-      title,
-      description,
-      constraints,
-      difficulty,
-      tags,
-      sampleTests,
-      hiddenTests
-    } = req.body;
-
     if (req.user.role !== "admin") {
-      return res.status(403).json({ error: "Access denied. Admins only." });
+      return res.status(403).json({ error: "Admins only" });
     }
-
-    // 🧪 Validate & normalize sample tests
-    const parsedSamples = Array.isArray(sampleTests)
-      ? sampleTests.map(({ input, output }) => ({
-          input: input?.trim() || '',
-          expectedOutput: output?.trim() || ''
-        }))
-      : [];
-
-    // 🧪 Validate & normalize hidden test cases
-    const parsedHiddenTests = Array.isArray(hiddenTests)
-      ? hiddenTests.map(({ input, expectedOutput }) => ({
-          input: input?.trim() || '',
-          expectedOutput: expectedOutput?.trim() || ''
-        }))
-      : [];
 
     const problem = new Problem({
       title,
@@ -54,18 +56,19 @@ exports.createProblem = async (req, res) => {
       tags,
       sampleInput: parsedSamples[0]?.input || '',
       sampleOutput: parsedSamples[0]?.expectedOutput || '',
-      testCases: parsedHiddenTests,
+      testCases: parsedHidden,
       createdBy: req.user.id
     });
 
     await problem.save();
-
-    res.status(201).json({ message: "Problem created successfully", problem });
+    console.log("🛢️ Saved problem:", problem);
+    res.status(201).json({ message: "Problem created", problem });
   } catch (err) {
-    console.error("❌ Error creating problem:", err);
-    res.status(500).json({ error: "Failed to create problem", details: err.message });
+    console.error("❌ CreateProblem error:", err);
+    res.status(500).json({ error: "Create failed", details: err.message });
   }
 };
+
 
 
 
