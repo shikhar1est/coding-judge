@@ -30,30 +30,43 @@ exports.createProblem = async (req, res) => {
       return res.status(403).json({ error: "Access denied. Admins only." });
     }
 
-    const sampleInput = sampleTests?.[0]?.input || '';
-const sampleOutput = sampleTests?.[0]?.output || '';
+    // 🧪 Validate & normalize sample tests
+    const parsedSamples = Array.isArray(sampleTests)
+      ? sampleTests.map(({ input, output }) => ({
+          input: input?.trim() || '',
+          expectedOutput: output?.trim() || ''
+        }))
+      : [];
 
-const problem = new Problem({
-  title,
-  description,
-  constraints,
-  difficulty,
-  tags,
-  sampleInput,
-  sampleOutput,
-  testCases: Array.isArray(hiddenTests) ? hiddenTests : [],
-  createdBy: req.user.id
-});
+    // 🧪 Validate & normalize hidden test cases
+    const parsedHiddenTests = Array.isArray(hiddenTests)
+      ? hiddenTests.map(({ input, expectedOutput }) => ({
+          input: input?.trim() || '',
+          expectedOutput: expectedOutput?.trim() || ''
+        }))
+      : [];
 
+    const problem = new Problem({
+      title,
+      description,
+      constraints,
+      difficulty,
+      tags,
+      sampleInput: parsedSamples[0]?.input || '',
+      sampleOutput: parsedSamples[0]?.expectedOutput || '',
+      testCases: parsedHiddenTests,
+      createdBy: req.user.id
+    });
 
     await problem.save();
-    res.status(201).json({ message: "Problem created successfully", problem });
 
+    res.status(201).json({ message: "Problem created successfully", problem });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Failed to create problem" });
+    console.error("❌ Error creating problem:", err);
+    res.status(500).json({ error: "Failed to create problem", details: err.message });
   }
 };
+
 
 
 // ✅ GET ALL
