@@ -61,40 +61,39 @@ export default function AdminPage() {
     fetchProblems();
   }, []);
 
-  const handleAddProblem = async (e: React.FormEvent) => {
-    e.preventDefault();
+const handleAddProblem = async (e: React.FormEvent) => {
+  e.preventDefault();
 
-    if (!sampleTests.length || !hiddenTests.length) {
-      alert("Please add at least one sample and one hidden test case.");
-      return;
-    }
+  if (!sampleTests.length || !hiddenTests.length) {
+    alert("Please add at least one sample and one hidden test case.");
+    return;
+  }
 
-    try {
-      const res = await api.post("/problems", {
-        title,
-        description,
-        difficulty,
-        tags: tags.split(",").map((t) => t.trim()),
-        constraints,
-        sampleInput: sampleTests[0]?.input || "",
-        sampleOutput: sampleTests[0]?.output || "",
-        testCases: hiddenTests,
-      });
+  try {
+    const res = await api.post("/problems", {
+      title,
+      description,
+      difficulty,
+      tags: tags.split(",").map((t) => t.trim()),
+      constraints,
+      sampleTests, // ✅ not sampleInput/sampleOutput
+      hiddenTests, // ✅ not testCases
+    });
 
-      setProblems((prev) => [...prev, res.data.problem]);
-      // Reset form
-      setTitle("");
-      setDescription("");
-      setDifficulty("Easy");
-      setTags("");
-      setConstraints("");
-      setSampleTests([]);
-      setHiddenTests([]);
-    } catch (err) {
-      console.error("Error adding problem:", err);
-      alert("Failed to add problem");
-    }
-  };
+    setProblems((prev) => [...prev, res.data.problem]);
+    setTitle("");
+    setDescription("");
+    setDifficulty("Easy");
+    setTags("");
+    setConstraints("");
+    setSampleTests([]);
+    setHiddenTests([]);
+  } catch (err) {
+    console.error("Error adding problem:", err);
+    alert("Failed to add problem");
+  }
+};
+
 
   const handleDelete = async (id: string) => {
     const confirmDelete = window.confirm("Are you sure you want to delete this problem?");
