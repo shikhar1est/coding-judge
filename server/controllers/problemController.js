@@ -41,8 +41,6 @@ exports.createProblem = async (req, res) => {
   console.log("✅ parsedSamples:", parsedSamples);
   console.log("✅ parsedHidden:", parsedHidden);
 
-  // --- rest remains same
-
   try {
     if (req.user.role !== "admin") {
       return res.status(403).json({ error: "Admins only" });
@@ -68,9 +66,6 @@ exports.createProblem = async (req, res) => {
     res.status(500).json({ error: "Create failed", details: err.message });
   }
 };
-
-
-
 
 // ✅ GET ALL
 exports.getAllProblems = async (req, res) => {
@@ -120,4 +115,3 @@ exports.deleteProblem = async (req, res) => {
     res.status(500).json({ error: "Failed to delete problem", details: err.message });
   }
 };
-
