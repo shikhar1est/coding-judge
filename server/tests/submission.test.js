@@ -22,7 +22,7 @@ describe("Submission API", () => {
 
     const adminToken = adminRes.body.token;
     if (!adminToken) {
-      console.error("❌ Admin token not received. Check /register response:", adminRes.body);
+      console.error("Admin token not received. Check /register response:", adminRes.body);
       return;
     }
     const problemRes = await request(server)
@@ -37,7 +37,7 @@ describe("Submission API", () => {
       });
 
     if (!problemRes.body.problem) {
-      console.error("❌ Problem creation failed:", problemRes.body);
+      console.error("Problem creation failed:", problemRes.body);
       return;
     }
 

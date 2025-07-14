@@ -27,10 +27,9 @@ const executeCode = (code, language, input) => {
     fs.writeFileSync(codePath, code);
     fs.writeFileSync(inputPath, input);
 
-    // ✅ Check if Dockerfile exists at project root
     const dockerfileSource = path.join(__dirname, `../../${config.dockerfile}`);
     if (!fs.existsSync(dockerfileSource)) {
-      console.error(`❌ Missing Dockerfile: ${config.dockerfile} not found at ${dockerfileSource}`);
+      console.error(`Missing Dockerfile: ${config.dockerfile} not found at ${dockerfileSource}`);
       return resolve({ output: "", error: `Dockerfile '${config.dockerfile}' not found in project root` });
     }
 
@@ -43,15 +42,15 @@ const executeCode = (code, language, input) => {
       try {
         fs.rmSync(tempDir, { recursive: true, force: true });
       } catch (e) {
-        console.warn("⚠️ Temp cleanup failed:", e.message);
+        console.warn("Temp cleanup failed:", e.message);
       }
 
       if (err) {
-        console.error("❌ Docker build/run failed");
-        console.error("📄 Command:", dockerCommand);
-        console.error("📦 Temp Dir:", tempDir);
-        console.error("🐳 Docker Error Message:", err.message);
-        console.error("📤 Stderr:", stderr);
+        console.error("Docker build/run failed");
+        console.error("Command:", dockerCommand);
+        console.error("Temp Dir:", tempDir);
+        console.error("Docker Error Message:", err.message);
+        console.error("Stderr:", stderr);
         return resolve({ output: "", error: stderr || err.message });
       }
 

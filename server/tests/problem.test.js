@@ -5,7 +5,6 @@ const jwt = require("jsonwebtoken");
 
 const JWT_SECRET = process.env.JWT_SECRET || "your-secret";
 
-// Create dummy admin token
 const dummyAdminId = new mongoose.Types.ObjectId();
 const adminToken = jwt.sign({ id: dummyAdminId.toString(), role: "admin" }, JWT_SECRET, { expiresIn: "1h" });
 
@@ -39,7 +38,7 @@ describe("Problem API", () => {
       });
 
     if (res.statusCode !== 201) {
-      console.error("❌ Problem creation failed:", res.body);
+      console.error("Problem creation failed:", res.body);
     }
 
     expect(res.statusCode).toBe(201);
@@ -60,7 +59,7 @@ describe("Problem API", () => {
         hiddenTests: "3 => 4"
       });
 
-    expect(res.statusCode).toBe(401); // Or 403 if unauthorized
+    expect(res.statusCode).toBe(401);
     expect(res.body.error).toMatch(/token|unauthorized|access denied/i);
   });
 

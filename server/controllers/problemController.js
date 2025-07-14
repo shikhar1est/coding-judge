@@ -1,6 +1,5 @@
 const Problem = require("../models/Problem");
 
-// 🧠 Utility to parse raw test case string into structured objects
 const parseTestCases = (inputString) => {
   if (!inputString) return [];
   return inputString
@@ -13,7 +12,7 @@ const parseTestCases = (inputString) => {
     });
 };
 
-// ✅ CREATE
+
 exports.createProblem = async (req, res) => {
   console.log("🔁 Incoming request body:", JSON.stringify(req.body, null, 2));
 
@@ -51,9 +50,9 @@ exports.createProblem = async (req, res) => {
       tags,
       sampleInput: parsedSamples[0]?.input || '',
       sampleOutput: parsedSamples[0]?.expectedOutput || '',
-      sampleTests: parsedSamples,              // ✅ fix
-      hiddenTests: parsedHidden,               // ✅ fix
-      testCases: parsedHidden,                 // optional
+      sampleTests: parsedSamples,              
+      hiddenTests: parsedHidden,             
+      testCases: parsedHidden,                 
       createdBy: req.user.id
     });
 
@@ -61,13 +60,11 @@ exports.createProblem = async (req, res) => {
     console.log("🛢️ Saved problem:", problem);
     res.status(201).json({ message: "Problem created", problem });
   } catch (err) {
-    console.error("❌ CreateProblem error:", err);
+    console.error("CreateProblem error:", err);
     res.status(500).json({ error: "Create failed", details: err.message });
   }
 };
 
-
-// ✅ GET ALL
 exports.getAllProblems = async (req, res) => {
   try {
     const problems = await Problem.find().select("title description difficulty tags");
@@ -77,7 +74,6 @@ exports.getAllProblems = async (req, res) => {
   }
 };
 
-// ✅ GET BY ID
 exports.getProblemById = async (req, res) => {
   try {
     const problem = await Problem.findById(req.params.id);
@@ -88,7 +84,6 @@ exports.getProblemById = async (req, res) => {
   }
 };
 
-// ✅ UPDATE
 exports.updateProblem = async (req, res) => {
   try {
     const updated = await Problem.findByIdAndUpdate(
@@ -104,7 +99,6 @@ exports.updateProblem = async (req, res) => {
   }
 };
 
-// ✅ DELETE
 exports.deleteProblem = async (req, res) => {
   try {
     const deleted = await Problem.findByIdAndDelete(req.params.id);

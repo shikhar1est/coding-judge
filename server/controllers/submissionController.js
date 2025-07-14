@@ -3,7 +3,6 @@ const Submission = require("../models/Submission");
 const executeCode = require("../utils/codeExecutor");
 const esprima = require("esprima");
 
-// ✅ Token extractor by language
 function extractTokens(code, language) {
   if (language === "javascript") {
     try {
@@ -25,7 +24,6 @@ function extractTokens(code, language) {
     .filter(token => token.length > 1);
 }
 
-// 🔁 Jaccard similarity
 function jaccardSimilarity(tokensA, tokensB) {
   const setA = new Set(tokensA);
   const setB = new Set(tokensB);
@@ -34,7 +32,6 @@ function jaccardSimilarity(tokensA, tokensB) {
   return union.size === 0 ? 0 : intersection.length / union.size;
 }
 
-// ✅ Submit code controller
 exports.submitCode = async (req, res) => {
   try {
     const { code, language, problemId } = req.body;
@@ -151,7 +148,6 @@ exports.submitCode = async (req, res) => {
   }
 };
 
-// 🧾 User's submission history
 exports.getUserSubmissions = async (req, res) => {
   try {
     const submissions = await Submission.find({ user: req.user.id }).populate("problem", "title");
@@ -161,7 +157,6 @@ exports.getUserSubmissions = async (req, res) => {
   }
 };
 
-// 📊 Problem-specific submissions (Admin only)
 exports.getProblemSubmissions = async (req, res) => {
   try {
     const submissions = await Submission.find({ problem: req.params.id }).populate("user", "name email");
