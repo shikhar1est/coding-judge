@@ -11,13 +11,15 @@ const problemSchema = new mongoose.Schema({
   difficulty: { type: String, enum: ['Easy', 'Medium', 'Hard'], default: 'Easy' },
   tags: [{ type: String }],
   constraints: { type: String },
-  sampleTests: [
-    {
-      input: { type: String, required: true },
-      output: { type: String, required: true }
-    }
-  ],
-  hiddenTests: [testCaseSchema],
+
+  sampleInput: { type: String },
+  sampleOutput: { type: String },
+
+  sampleTests: [testCaseSchema],  
+  hiddenTests: [testCaseSchema],   
+
+  testCases: [testCaseSchema],     
+
   createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User" }
 }, { timestamps: true });
 

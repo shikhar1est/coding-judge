@@ -30,16 +30,13 @@ exports.createProblem = async (req, res) => {
   console.log("📦 sampleTests:", sampleTests);
   console.log("📦 hiddenTests:", hiddenTests);
 
-  // normalize arrays
   const parsedSamples = Array.isArray(sampleTests)
     ? sampleTests.map(({ input, output }) => ({ input, expectedOutput: output }))
     : [];
+
   const parsedHidden = Array.isArray(hiddenTests)
     ? hiddenTests.map(({ input, expectedOutput }) => ({ input, expectedOutput }))
     : [];
-
-  console.log("✅ parsedSamples:", parsedSamples);
-  console.log("✅ parsedHidden:", parsedHidden);
 
   try {
     if (req.user.role !== "admin") {
@@ -54,7 +51,9 @@ exports.createProblem = async (req, res) => {
       tags,
       sampleInput: parsedSamples[0]?.input || '',
       sampleOutput: parsedSamples[0]?.expectedOutput || '',
-      testCases: parsedHidden,
+      sampleTests: parsedSamples,              // ✅ fix
+      hiddenTests: parsedHidden,               // ✅ fix
+      testCases: parsedHidden,                 // optional
       createdBy: req.user.id
     });
 
@@ -66,6 +65,7 @@ exports.createProblem = async (req, res) => {
     res.status(500).json({ error: "Create failed", details: err.message });
   }
 };
+
 
 // ✅ GET ALL
 exports.getAllProblems = async (req, res) => {
